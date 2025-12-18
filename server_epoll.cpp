@@ -23,6 +23,9 @@ inline void set_nonblock(int fd) {
 }
 
 class UniqueFd {
+
+    int fd_ = -1;
+
 public:
     UniqueFd() = default;
     explicit UniqueFd(int fd) : fd_(fd) {}
@@ -37,24 +40,24 @@ public:
         return *this;
     }
 
-    int  get()   const { return fd_; }
+    int get() const { return fd_; }
     bool valid() const { return fd_ != -1; }
 
     void reset(int newfd = -1) {
         if (fd_ != -1) ::close(fd_);
         fd_ = newfd;
     }
-
-private:
-    int fd_ = -1;
 };
 
 class Epoll {
+
+    UniqueFd ep_;
+
 public:
     Epoll() : ep_(::epoll_create1(EPOLL_CLOEXEC)) {}
 
     bool valid() const { return ep_.valid(); }
-    int  fd()    const { return ep_.get(); }
+    int fd() const { return ep_.get(); }
 
     void add_in(int fd) {
         epoll_event ev{};
@@ -70,12 +73,13 @@ public:
     int wait(epoll_event* out, int cap, int timeout_ms = -1) {
         return ::epoll_wait(ep_.get(), out, cap, timeout_ms);
     }
-
-private:
-    UniqueFd ep_;
 };
 
 class SignalFd {
+
+    sigset_t  mask_{};
+    UniqueFd  fd_;
+
 public:
     explicit SignalFd(std::initializer_list<int> sigs) {
         ::sigemptyset(&mask_);
@@ -104,13 +108,12 @@ public:
         }
         return stop;
     }
-
-private:
-    sigset_t  mask_{};
-    UniqueFd  fd_;
 };
 
 class Listener {
+    
+    UniqueFd fd_;
+
 public:
     explicit Listener(unsigned short port) {
         int s = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -137,12 +140,12 @@ public:
     int accept_one() const {
         return ::accept(fd_.get(), nullptr, nullptr);
     }
-
-private:
-    UniqueFd fd_;
 };
 
 class Client {
+
+    UniqueFd fd_;
+
 public:
     explicit Client(int fd) : fd_(fd) {
         set_nonblock(fd_.get());
@@ -153,14 +156,12 @@ public:
     ssize_t recv_some(void* buf, size_t cap) {
         return ::recv(fd_.get(), buf, cap, 0);
     }
-
-private:
-    UniqueFd fd_;
 };
 
 } // namespace sys
 
 int main(int argc, char* argv[]) {
+
     unsigned short port = 12345;
     if (argc > 1) {
         int p = std::atoi(argv[1]);
