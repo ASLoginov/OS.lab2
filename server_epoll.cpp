@@ -91,7 +91,7 @@ public:
     }
 
     bool valid() const { return fd_.valid(); }
-    int  fd()    const { return fd_.get(); }
+    int fd() const { return fd_.get(); }
 
     bool drain_and_handle(std::ostream& os) {
         bool stop = false;
@@ -123,9 +123,9 @@ public:
         ::setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
         sockaddr_in a{};
-        a.sin_family      = AF_INET;
+        a.sin_family = AF_INET;
         a.sin_addr.s_addr = htonl(INADDR_ANY);
-        a.sin_port        = htons(port);
+        a.sin_port = htons(port);
 
         if (::bind(s, (sockaddr*)&a, sizeof(a)) < 0) { ::close(s); return; }
         if (::listen(s, SOMAXCONN) < 0) { ::close(s); return; }
@@ -135,7 +135,7 @@ public:
     }
 
     bool valid() const { return fd_.valid(); }
-    int  fd()    const { return fd_.get(); }
+    int fd() const { return fd_.get(); }
 
     int accept_one() const {
         return ::accept(fd_.get(), nullptr, nullptr);
